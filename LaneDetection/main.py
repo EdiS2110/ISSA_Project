@@ -10,6 +10,11 @@ cam = cv2.VideoCapture('Lane Detection Test Video 01 1.mp4')
 width = int(1920/3)
 height = int(1080/4)
 
+left_top = 0
+right_top = 0
+left_bottom = 0
+right_bottom = 0
+
 while True:
     ret, frame = cam.read()
 
@@ -100,9 +105,9 @@ while True:
     # for rows in range(0,frame.shape[0]):
     #     for cols in range(0,frame.shape[1]):
     #         if(frame[rows][cols] < int(255/2)):
-    #             frame[rows][cols] = 0
+    #             frame[rows,cols] = 0
     #         else:
-    #             frame[rows][cols] = 255
+    #             frame[rows,cols] = 255
 
     def binarize(n):
         threshold = 80
@@ -121,10 +126,63 @@ while True:
 
     cv2.imshow('Binarized', frame)
 
+#9)  coordinates of street markings on each side of the road
+
+    frameCopy = np.copy(frame)
+
+    print(frameCopy.shape)
+
+    frameCopy[:,0:int(width * 0.05)] = 0
+    frameCopy[:,width - int(width * 0.05):] = 0
+
+    cv2.imshow("Blackout first and last 5% of cols", frameCopy)
+
+    whiteDotsCoordsLeft = np.argwhere(frameCopy[:,0:int(width/2)]) # return coords in form of (y,x)
+    whiteDotsCoordsRight = np.argwhere(frameCopy[:,int(width/2)+1:])
+
+    x_coords_left = whiteDotsCoordsLeft[:, 1]
+    y_coords_left = whiteDotsCoordsLeft[:, 0]
+
+    x_coords_right = whiteDotsCoordsRight[:, 1]
+    y_coords_right = whiteDotsCoordsRight[:, 0]
+
+#10) Find the lines that detect the edges of the lane
+
+    right_side = np.polynomial.polynomial.polyfit(x_coords_right, y_coords_right, deg=1)
+    left_side = np.polynomial.polynomial.polyfit(x_coords_left, y_coords_left, deg=1)
+
+    left_top_y = 0
+    left_top_x = (left_top_y - left_side[0])/left_side[1]
+
+    left_bottom_y = height-1
+    left_bottom_x = (left_bottom_y - left_side[0])/left_side[1]
+
+    right_top_y = 0
+    right_top_x =  (right_top_y - right_side[0])/right_side[1]
+
+    right_bottom_y = height-1
+    right_bottom_x = (right_bottom_y - right_side[0])/right_side[1]
+
+    if -(10**8) <= left_top_x <= 10**8:
+        if -(10**8) <= left_bottom_x <= 10**8:
+            if -(10**8) <= right_top_x <= 10**8:
+                if -(10**8) <= right_bottom_x <= 10**8:
+                    left_top = (int(left_top_x), int(left_top_y))
+                    right_top = (int(right_top_x), int(right_top_y))
+                    left_bottom = (int(left_bottom_x), int(left_bottom_y))
+                    right_bottom = (int(right_bottom_x), int(right_bottom_y))
+
+    frameCopy = cv2.line(frameCopy, left_top, left_bottom, (200, 0, 0), 5)
+    frameCopy = cv2.line(frameCopy, right_top, right_bottom, (100, 0, 0), 5)
+
+
+    cv2.imshow("Draw lines", frameCopy)
+
+
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-    # AFISEAZA TOATE FERESTRELE UNA LANGA ALTA
+
 
 cam.release()
 cv2.destroyAllWindows()
