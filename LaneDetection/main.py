@@ -29,6 +29,8 @@ while True:
 
     frame = cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
+    cv2.imshow('Original', frame)
+
 #4) Trapezoid
 
     trapezoid_frame = np.zeros((270, 640), dtype = np.uint8)
@@ -44,6 +46,8 @@ while True:
     # cv2.imshow('Trapezoid', black_frame * 255)
 
     frame = trapezoid_frame * frame
+
+    cv2.imshow('Cropped', frame)
 
 #5) Top-down view
 
@@ -61,9 +65,14 @@ while True:
 
     frame = cv2.warpPerspective(frame, stretch_matrix, dsize=(640, 270))
 
+    cv2.imshow('Top down view', frame)
+
+
 #6) Blur
 
     frame = cv2.blur(frame, ksize=(5,5))
+
+    cv2.imshow('Blurred', frame)
 
 #7) Edge detection
 
@@ -84,6 +93,8 @@ while True:
 
     frame = cv2.convertScaleAbs(final_matrix)
 
+    cv2.imshow('Edge detection', frame)
+
 #8) Binarize the frames
 
     # for rows in range(0,frame.shape[0]):
@@ -94,7 +105,7 @@ while True:
     #             frame[rows][cols] = 255
 
     def binarize(n):
-        threshold = int(255/2) - 30
+        threshold = 80
         if n > threshold:
             return 255
         else:
@@ -102,13 +113,13 @@ while True:
 
     vectorized_binarize = np.vectorize(binarize)
 
-    frame = vectorized_binarize(frame)
+    # frame = vectorized_binarize(frame)
+    #
+    # frame = np.uint8(frame)
 
-    frame = np.uint8(frame)
+    _, frame = cv2.threshold(frame, 80, 255, cv2.THRESH_BINARY)
 
-    # cv2.threshold(frame, 0, 255, cv2.THRESH_BINARY)
-
-    cv2.imshow('Original', frame)
+    cv2.imshow('Binarized', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
