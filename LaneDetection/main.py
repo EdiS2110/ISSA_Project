@@ -3,6 +3,7 @@ from random import random
 import cv2
 import numpy as np
 from cv2 import cvtColor
+from six import binary_type
 
 cam = cv2.VideoCapture('Lane Detection Test Video 01 1.mp4')
 
@@ -60,10 +61,59 @@ while True:
 
     frame = cv2.warpPerspective(frame, stretch_matrix, dsize=(640, 270))
 
+#6) Blur
+
+    frame = cv2.blur(frame, ksize=(5,5))
+
+#7) Edge detection
+
+    sobel_vertical = np.float32([[-1, -2, -1],
+                                 [0, 0, 0],
+                                 [1, 2, 1]])
+
+    sobel_horizontal = np.transpose(sobel_vertical)
+
+    frame = np.float32(frame)
+
+    filter_matrix_vertical = cv2.filter2D(frame, -1, kernel=sobel_vertical)
+    filter_matrix_horizontal = cv2.filter2D(frame, -1, kernel=sobel_horizontal)
+
+    # filter_matrix_horizontal = cv2.filter2D(sobel_horizontal, -1, frame )
+
+    final_matrix = np.sqrt((filter_matrix_vertical ** 2) + (filter_matrix_horizontal ** 2))
+
+    frame = cv2.convertScaleAbs(final_matrix)
+
+#8) Binarize the frames
+
+    # for rows in range(0,frame.shape[0]):
+    #     for cols in range(0,frame.shape[1]):
+    #         if(frame[rows][cols] < int(255/2)):
+    #             frame[rows][cols] = 0
+    #         else:
+    #             frame[rows][cols] = 255
+
+    def binarize(n):
+        threshold = int(255/2) - 30
+        if n > threshold:
+            return 255
+        else:
+            return 0
+
+    vectorized_binarize = np.vectorize(binarize)
+
+    frame = vectorized_binarize(frame)
+
+    frame = np.uint8(frame)
+
+    # cv2.threshold(frame, 0, 255, cv2.THRESH_BINARY)
+
     cv2.imshow('Original', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+
+    # AFISEAZA TOATE FERESTRELE UNA LANGA ALTA
 
 cam.release()
 cv2.destroyAllWindows()
