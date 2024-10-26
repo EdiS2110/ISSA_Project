@@ -199,7 +199,7 @@ while True:
 
     empty_frame_right = cv2.line(empty_frame_right, right_top, right_bottom, (255, 0, 0), 3)
 
-    stretch_matrix = cv2.getPerspectiveTransform(screenPoints, trapezoidPoints)
+    # stretch_matrix = cv2.getPerspectiveTransform(screenPoints, trapezoidPoints)
 
     empty_frame_right = cv2.warpPerspective(empty_frame_right, stretch_matrix, dsize=(640, 270))
 
