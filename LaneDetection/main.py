@@ -18,10 +18,13 @@ right_bottom = 0
 while True:
     ret, frame = cam.read()
 
+
     if ret is False:
         break
 #2) Shrink the frame
     frame =  cv2.resize(frame, (640, 270))
+    main_frame = np.copy(frame)
+
 
 #3) Grayscale
     new_frame = np.zeros((270,640), dtype = np.uint8)
@@ -122,28 +125,27 @@ while True:
     #
     # frame = np.uint8(frame)
 
-    _, frame = cv2.threshold(frame, 80, 255, cv2.THRESH_BINARY)
+    _, frame = cv2.threshold(frame,  80, 255, cv2.THRESH_BINARY)
 
     cv2.imshow('Binarized', frame)
 
 #9)  coordinates of street markings on each side of the road
 
-    frameCopy = np.copy(frame)
+    # frameCopy = np.copy(frame)
 
-    print(frameCopy.shape)
 
-    frameCopy[:,0:int(width * 0.05)] = 0
-    frameCopy[:,width - int(width * 0.05):] = 0
+    frame[:,0:int(width * 0.05)] = 0
+    frame[:,width - int(width * 0.05):] = 0
 
-    cv2.imshow("Blackout first and last 5% of cols", frameCopy)
+    cv2.imshow("Blackout first and last 5% of cols", frame)
 
-    whiteDotsCoordsLeft = np.argwhere(frameCopy[:,0:int(width/2)]) # return coords in form of (y,x)
-    whiteDotsCoordsRight = np.argwhere(frameCopy[:,int(width/2)+1:])
+    whiteDotsCoordsLeft = np.argwhere(frame[:,0:int(width/2)]) # return coords in form of (y,x)
+    whiteDotsCoordsRight = np.argwhere(frame[:,int(width/2)+1:])
 
     x_coords_left = whiteDotsCoordsLeft[:, 1]
     y_coords_left = whiteDotsCoordsLeft[:, 0]
 
-    x_coords_right = whiteDotsCoordsRight[:, 1]
+    x_coords_right = int(width/2) + whiteDotsCoordsRight[:, 1] # + width/2 because argwhere treats frameCopy[:,int(width/2)+1:] from index 0
     y_coords_right = whiteDotsCoordsRight[:, 0]
 
 #10) Find the lines that detect the edges of the lane
@@ -172,12 +174,43 @@ while True:
                     left_bottom = (int(left_bottom_x), int(left_bottom_y))
                     right_bottom = (int(right_bottom_x), int(right_bottom_y))
 
-    frameCopy = cv2.line(frameCopy, left_top, left_bottom, (200, 0, 0), 5)
-    frameCopy = cv2.line(frameCopy, right_top, right_bottom, (100, 0, 0), 5)
+    frame = cv2.line(frame, left_top, left_bottom, (200, 0, 0), 5)
+    frame = cv2.line(frame, right_top, right_bottom, (100, 0, 0), 5)
 
 
-    cv2.imshow("Draw lines", frameCopy)
+    cv2.imshow("Draw lines", frame)
 
+
+#11) Final visualization
+
+    empty_frame_left = np.zeros((270, 640), dtype=np.uint8)
+
+    empty_frame_left = cv2.line(empty_frame_left, left_top, left_bottom, (255, 0, 0), 3)
+
+    stretch_matrix = cv2.getPerspectiveTransform(screenPoints, trapezoidPoints)
+
+    empty_frame_left = cv2.warpPerspective(empty_frame_left, stretch_matrix, dsize=(640, 270))
+
+    left = np.argwhere(empty_frame_left)
+
+    # cv2.imshow("Final visualization LEFT", empty_frame_left)
+
+    empty_frame_right = np.zeros((270, 640), dtype=np.uint8)
+
+    empty_frame_right = cv2.line(empty_frame_right, right_top, right_bottom, (255, 0, 0), 3)
+
+    stretch_matrix = cv2.getPerspectiveTransform(screenPoints, trapezoidPoints)
+
+    empty_frame_right = cv2.warpPerspective(empty_frame_right, stretch_matrix, dsize=(640, 270))
+
+    right = np.argwhere(empty_frame_right)
+
+    # cv2.imshow("Final visualization RIGHT", empty_frame_right)
+
+    main_frame[left[:,0], left[:,1]] = (50, 50, 250)
+    main_frame[right[:, 0], right[:, 1]] = (50, 250, 50)
+
+    cv2.imshow("Final visualization COLOR", main_frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
