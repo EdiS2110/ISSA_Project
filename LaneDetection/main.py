@@ -1,9 +1,6 @@
-from random import random
-
 import cv2
 import numpy as np
 from cv2 import cvtColor
-from six import binary_type
 
 cam = cv2.VideoCapture('Lane Detection Test Video 01 1.mp4')
 
@@ -22,13 +19,12 @@ while True:
     if ret is False:
         break
 #2) Shrink the frame
-    frame =  cv2.resize(frame, (640, 270))
+    frame =  cv2.resize(frame, (width, height))
     main_frame = np.copy(frame)
 
 
 #3) Grayscale
-    new_frame = np.zeros((270,640), dtype = np.uint8)
-
+    #new_frame = np.zeros((height,width), dtype = np.uint8)
     # for i in range(0, frame.shape[0]):
     #     for j in range(0, frame.shape[1]):
     #         B, G, R = frame[i][j]
@@ -41,7 +37,7 @@ while True:
 
 #4) Trapezoid
 
-    trapezoid_frame = np.zeros((270, 640), dtype = np.uint8)
+    trapezoid_frame = np.zeros((height, width), dtype = np.uint8)
 
     upper_left = (int(width*0.45), int(height * 0.77))
     upper_right = (width - int(width*0.45), int(height * 0.77))
@@ -53,7 +49,7 @@ while True:
     cv2.fillConvexPoly(trapezoid_frame, trapezoidPoints, 1)
     # cv2.imshow('Trapezoid', black_frame * 255)
 
-    frame = trapezoid_frame * frame
+    frame = trapezoid_frame * frame # crop the trapezoid from the frame
 
     cv2.imshow('Cropped', frame)
 
@@ -64,20 +60,22 @@ while True:
     screen_lower_left = (0, height)
     screen_lower_right = (width, height)
 
+    #points in trigonometrical order
     screenPoints = np.array([screen_upper_right, screen_upper_left, screen_lower_left, screen_lower_right],
                             dtype = np.float32)
 
-    trapezoidPoints = np.float32(trapezoidPoints)
+    trapezoidPoints = np.float32(trapezoidPoints) #convert to float32
 
+    # get the matrix to stretch the frame to the screen points
     stretch_matrix = cv2.getPerspectiveTransform(trapezoidPoints, screenPoints)
 
-    frame = cv2.warpPerspective(frame, stretch_matrix, dsize=(640, 270))
+    #apply the transformation
+    frame = cv2.warpPerspective(frame, stretch_matrix, dsize=(width, height))
 
     cv2.imshow('Top down view', frame)
 
 
 #6) Blur
-
     frame = cv2.blur(frame, ksize=(5,5))
 
     cv2.imshow('Blurred', frame)
@@ -89,6 +87,11 @@ while True:
                                  [1, 2, 1]])
 
     sobel_horizontal = np.transpose(sobel_vertical)
+    '''
+    -1 0 1
+    -2 0 2
+    -1 0 1
+    '''
 
     frame = np.float32(frame)
 
@@ -99,12 +102,13 @@ while True:
 
     final_matrix = np.sqrt((filter_matrix_vertical ** 2) + (filter_matrix_horizontal ** 2))
 
-    frame = cv2.convertScaleAbs(final_matrix)
+    frame = cv2.convertScaleAbs(final_matrix) #??????????????????????
 
     cv2.imshow('Edge detection', frame)
 
 #8) Binarize the frames
 
+    # Method 1
     # for rows in range(0,frame.shape[0]):
     #     for cols in range(0,frame.shape[1]):
     #         if(frame[rows][cols] < int(255/2)):
@@ -112,14 +116,15 @@ while True:
     #         else:
     #             frame[rows,cols] = 255
 
-    def binarize(n):
-        threshold = 80
-        if n > threshold:
-            return 255
-        else:
-            return 0
-
-    vectorized_binarize = np.vectorize(binarize)
+    # Method 2
+    # def binarize(n):
+    #     threshold = 80
+    #     if n > threshold:
+    #         return 255
+    #     else:
+    #         return 0
+    #
+    # vectorized_binarize = np.vectorize(binarize)
 
     # frame = vectorized_binarize(frame)
     #
@@ -132,7 +137,6 @@ while True:
 #9)  coordinates of street markings on each side of the road
 
     # frameCopy = np.copy(frame)
-
 
     frame[:,0:int(width * 0.05)] = 0
     frame[:,width - int(width * 0.05):] = 0
@@ -183,25 +187,25 @@ while True:
 
 #11) Final visualization
 
-    empty_frame_left = np.zeros((270, 640), dtype=np.uint8)
+    empty_frame_left = np.zeros((height, width), dtype=np.uint8)
 
     empty_frame_left = cv2.line(empty_frame_left, left_top, left_bottom, (255, 0, 0), 3)
 
     stretch_matrix = cv2.getPerspectiveTransform(screenPoints, trapezoidPoints)
 
-    empty_frame_left = cv2.warpPerspective(empty_frame_left, stretch_matrix, dsize=(640, 270))
+    empty_frame_left = cv2.warpPerspective(empty_frame_left, stretch_matrix, dsize=(width, height))
 
     left = np.argwhere(empty_frame_left)
 
     # cv2.imshow("Final visualization LEFT", empty_frame_left)
 
-    empty_frame_right = np.zeros((270, 640), dtype=np.uint8)
+    empty_frame_right = np.zeros((height, width), dtype=np.uint8)
 
     empty_frame_right = cv2.line(empty_frame_right, right_top, right_bottom, (255, 0, 0), 3)
 
     # stretch_matrix = cv2.getPerspectiveTransform(screenPoints, trapezoidPoints)
 
-    empty_frame_right = cv2.warpPerspective(empty_frame_right, stretch_matrix, dsize=(640, 270))
+    empty_frame_right = cv2.warpPerspective(empty_frame_right, stretch_matrix, dsize=(width, height))
 
     right = np.argwhere(empty_frame_right)
 
