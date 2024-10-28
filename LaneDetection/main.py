@@ -154,7 +154,7 @@ while True:
 
 #10) Find the lines that detect the edges of the lane
 
-    right_side = np.polynomial.polynomial.polyfit(x_coords_right, y_coords_right, deg=1)
+    right_side = np.polynomial.polynomial.polyfit(x_coords_right, y_coords_right, deg=1) #??????????????????????????
     left_side = np.polynomial.polynomial.polyfit(x_coords_left, y_coords_left, deg=1)
 
     left_top_y = 0
@@ -203,14 +203,13 @@ while True:
 
     empty_frame_right = cv2.line(empty_frame_right, right_top, right_bottom, (255, 0, 0), 3)
 
-    # stretch_matrix = cv2.getPerspectiveTransform(screenPoints, trapezoidPoints)
-
     empty_frame_right = cv2.warpPerspective(empty_frame_right, stretch_matrix, dsize=(width, height))
 
     right = np.argwhere(empty_frame_right)
 
     # cv2.imshow("Final visualization RIGHT", empty_frame_right)
 
+    #color the lines
     main_frame[left[:,0], left[:,1]] = (50, 50, 250)
     main_frame[right[:, 0], right[:, 1]] = (50, 250, 50)
 
@@ -218,8 +217,6 @@ while True:
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-
-
 
 cam.release()
 cv2.destroyAllWindows()
