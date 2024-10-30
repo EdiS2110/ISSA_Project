@@ -14,7 +14,10 @@ right_bottom = 0
 
 while True:
     ret, frame = cam.read()
-
+    # ret (bool): return code of the 'read' operation
+    # frame (array): The actual frame as an array
+    #               Height x Width x 3 (3 colors, BGR) if color image
+    #               Height x Width if Grayscale
 
     if ret is False:
         break
@@ -24,12 +27,16 @@ while True:
 
 
 #3) Grayscale
-    #new_frame = np.zeros((height,width), dtype = np.uint8)
-    # for i in range(0, frame.shape[0]):
+    # My method
+    # new_frame = np.zeros((height,width), dtype = np.uint8)
+    #
+    # for i in range(0, frame.shape[0]):         # frame.shape returns a tuple of (height, width)
     #     for j in range(0, frame.shape[1]):
-    #         B, G, R = frame[i][j]
-    #         GRAYSCALE = R * 0.3 + G * 0.59 + B * 0.11
-    #         new_frame[i][j] = GRAYSCALE
+    #         B, G, R = frame[i,j]
+    #         GRAYSCALE = R * 0.3 + G * 0.59 + B * 0.11 # NTSC (National Television System Committee) formula
+    #         new_frame[i,j] = GRAYSCALE
+    #
+    # frame = new_frame
 
     frame = cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -39,22 +46,26 @@ while True:
 
     trapezoid_frame = np.zeros((height, width), dtype = np.uint8)
 
+    #trapezoid points - where we draw it
     upper_left = (int(width*0.45), int(height * 0.77))
     upper_right = (width - int(width*0.45), int(height * 0.77))
     lower_left = (0,height)
     lower_right = (width,height)
 
     trapezoidPoints = np.array([upper_right, upper_left, lower_left, lower_right], dtype = np.int32)
+                                    # points in trigonometrical order, because that's how fillConvexPoly works
 
     cv2.fillConvexPoly(trapezoid_frame, trapezoidPoints, 1)
     # cv2.imshow('Trapezoid', black_frame * 255)
 
     frame = trapezoid_frame * frame # crop the trapezoid from the frame
+                                    # this is element-wise multiplication, that is element by element
 
     cv2.imshow('Cropped', frame)
 
 #5) Top-down view
 
+    #the extremities of the window
     screen_upper_right = (width, 0)
     screen_upper_left = (0, 0)
     screen_lower_left = (0, height)
@@ -215,7 +226,7 @@ while True:
 
     cv2.imshow("Final visualization COLOR", main_frame)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    if cv2.waitKey(1) & 0xFF == ord('q'): # bitwise AND to make sure we get just the ASCII code of the key pressed
         break
 
 cam.release()
