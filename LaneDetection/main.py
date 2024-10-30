@@ -112,6 +112,10 @@ while True:
 
 
 #7) Edge detection
+    '''
+    Sobel filter is a filtering method used to detect edges within an image by identifying and highlighting
+    coarse changes in pixel intensity based on the 1st derivative. 
+    '''
 
     sobel_vertical = np.float32([[-1, -2, -1],
                                  [0, 0, 0],
@@ -129,11 +133,9 @@ while True:
     filter_matrix_vertical = cv2.filter2D(frame, -1, kernel=sobel_vertical)
     filter_matrix_horizontal = cv2.filter2D(frame, -1, kernel=sobel_horizontal)
 
-    # filter_matrix_horizontal = cv2.filter2D(sobel_horizontal, -1, frame )
+    final_matrix = np.sqrt((filter_matrix_vertical ** 2) + (filter_matrix_horizontal ** 2)) # it is done element by element
 
-    final_matrix = np.sqrt((filter_matrix_vertical ** 2) + (filter_matrix_horizontal ** 2))
-
-    frame = cv2.convertScaleAbs(final_matrix) #??????????????????????
+    frame = cv2.convertScaleAbs(final_matrix) # Scales, computes absolute values and converts the result to 8-bit
 
     cv2.imshow('Edge detection', frame)
 
@@ -169,6 +171,7 @@ while True:
 
     # frameCopy = np.copy(frame)
 
+    # blackout first and last 5%
     frame[:,0:int(width * 0.05)] = 0
     frame[:,width - int(width * 0.05):] = 0
 
@@ -176,6 +179,8 @@ while True:
 
     whiteDotsCoordsLeft = np.argwhere(frame[:,0:int(width/2)]) # return coords in form of (y,x)
     whiteDotsCoordsRight = np.argwhere(frame[:,int(width/2)+1:])
+    # argwhere -> returns an array where every row contains the coordinates of a
+    # position in the initial matrix where the corresponding element satisfied our condition (x>1)
 
     x_coords_left = whiteDotsCoordsLeft[:, 1]
     y_coords_left = whiteDotsCoordsLeft[:, 0]
@@ -184,10 +189,14 @@ while True:
     y_coords_right = whiteDotsCoordsRight[:, 0]
 
 #10) Find the lines that detect the edges of the lane
-
-    right_side = np.polynomial.polynomial.polyfit(x_coords_right, y_coords_right, deg=1) #??????????????????????????
+    '''
+    The function gives us the line (a polynomial of degree 1) that best passes 
+    through the points determined by x_list and y_list.
+    '''
+    right_side = np.polynomial.polynomial.polyfit(x_coords_right, y_coords_right, deg=1)
     left_side = np.polynomial.polynomial.polyfit(x_coords_left, y_coords_left, deg=1)
 
+    # Coordinates of the lines
     left_top_y = 0
     left_top_x = (left_top_y - left_side[0])/left_side[1]
 
@@ -218,14 +227,19 @@ while True:
 
 #11) Final visualization
 
+    #a) blank frame
     empty_frame_left = np.zeros((height, width), dtype=np.uint8)
 
+    #b) draw the line
     empty_frame_left = cv2.line(empty_frame_left, left_top, left_bottom, (255, 0, 0), 3)
 
+    #c) map the top-down to the screen points (the opposite of #5)
     stretch_matrix = cv2.getPerspectiveTransform(screenPoints, trapezoidPoints)
 
+    #d) warp the perspective
     empty_frame_left = cv2.warpPerspective(empty_frame_left, stretch_matrix, dsize=(width, height))
 
+    #e) get the coordinates of the white pixels for the original image
     left = np.argwhere(empty_frame_left)
 
     # cv2.imshow("Final visualization LEFT", empty_frame_left)
