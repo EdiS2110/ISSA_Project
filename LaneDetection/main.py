@@ -79,17 +79,37 @@ while True:
 
     # get the matrix to stretch the frame to the screen points
     stretch_matrix = cv2.getPerspectiveTransform(trapezoidPoints, screenPoints)
+        # returns a transformation matrix that maps every point (x,y) from
+        # the original image to a new point (x', y') from the transformed image
 
-    #apply the transformation
+    #apply the transformation to stretch the image
     frame = cv2.warpPerspective(frame, stretch_matrix, dsize=(width, height))
+        # the transformation is applied for every point from the original image
 
     cv2.imshow('Top down view', frame)
 
 
-#6) Blur
+#6) Blur - used to differentiate between the lane markings and not the lane markings
+    # To blur an image - make every pixel to be the average of its neighbors
+    # more blur - more neighbors and less blur - fewer neighbors
+
+    # The blur help to mark the outlines (more uniform)  and to reduce unnecessary details (ex: shadows)
+
     frame = cv2.blur(frame, ksize=(5,5))
+        # ksize = the size of the area between the pixel
+        # 5x5 -> 2 neighbors on every direction, 24 in total
+    '''
+        1   1   1   1   1
+        1   1   1   1   1
+        1   1   p   1   1
+        1   1   1   1   1
+        1   1   1   1   1
+        
+        p - the pixel we compute
+    '''
 
     cv2.imshow('Blurred', frame)
+
 
 #7) Edge detection
 
